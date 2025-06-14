@@ -232,65 +232,60 @@ for feature, coef in zip(features, model.coef_):
 # indicando a necessidade de incluir variáveis adicionais ou usar métodos mais complexos.
 # Assim, a regressão linear múltipla serve como uma linha de base, mas não deve ser o modelo final.
 
+#============================================================
+#4.2
+#ALÍNEA 3C — SVM
+#============================================================
+from sklearn.svm import SVR
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import cross_val_score
+import numpy as np
+
+#Testar os 3 kernels
+kernels = ['linear', 'rbf', 'poly']
+resultados_svm = {}
+
+for kernel in kernels:
+    pipeline = Pipeline([
+        ('scaler', StandardScaler()),
+        ('svr', SVR(kernel=kernel))
+    ])
+
+    mae_scores = -cross_val_score(pipeline, X, y, scoring='neg_mean_absolute_error', cv=5, n_jobs=-1)
+    rmse_scores = np.sqrt(-cross_val_score(pipeline, X, y, scoring='neg_mean_squared_error', cv=5, n_jobs=-1))
+
+    resultados_svm[kernel] = (mae_scores.mean(), rmse_scores.mean())
+    print(f"Kernel: {kernel} | MAE médio: {mae_scores.mean():.2f} | RMSE médio: {rmse_scores.mean():.2f}")
+
+melhor_kernel = min(resultados_svm, key=lambda k: resultados_svm[k][0])
+print(f"\nMelhor kernel: {melhor_kernel} com MAE médio {resultados_svm[melhor_kernel][0]:.2f} e RMSE médio {resultados_svm[melhor_kernel][1]:.2f}")
+
+
 # ============================================================
 # 4.2
-# ALÍNEA 3C — SVM
+# ALÍNEA 3D — Rede Neuronal com Pipeline e Normalização
 # ============================================================
-import numpy as np
-from sklearn.svm import SVR
+from sklearn.neural_network import MLPRegressor
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_absolute_error, mean_squared_error
+import numpy as np
 
 def kfold_indices(data, k=5):
     fold_size = len(data) // k
     indices = np.arange(len(data))
     folds = []
     for i in range(k):
-        if i == k-1:
-            test_idx = indices[i*fold_size:]
+        if i == k - 1:
+            test_idx = indices[i * fold_size:]
         else:
-            test_idx = indices[i*fold_size:(i+1)*fold_size]
-        train_idx = np.concatenate([indices[:i*fold_size], indices[(i+1)*fold_size:]])
+            test_idx = indices[i * fold_size: (i + 1) * fold_size]
+        train_idx = np.concatenate([indices[:i * fold_size], indices[(i + 1) * fold_size:]])
         folds.append((train_idx, test_idx))
     return folds
 
-kernels = ['linear', 'rbf', 'poly']
-k = 5
-folds = kfold_indices(X, k)
-
-resultados_svm = {}
-
-for kernel in kernels:
-    maes = []
-    rmses = []
-    for train_idx, test_idx in folds:
-        x_train, y_train = X.iloc[train_idx], y.iloc[train_idx]
-        x_test, y_test = X.iloc[test_idx], y.iloc[test_idx]
-
-        model = SVR(kernel=kernel)
-        model.fit(x_train, y_train)
-
-        y_pred = model.predict(x_test)
-        mae = mean_absolute_error(y_test, y_pred)
-        rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-        maes.append(mae)
-        rmses.append(rmse)
-
-    mae_medio = np.mean(maes)
-    rmse_medio = np.mean(rmses)
-    resultados_svm[kernel] = (mae_medio, rmse_medio)
-    print(f"Kernel: {kernel} | MAE médio: {mae_medio:.2f} | RMSE médio: {rmse_medio:.2f}")
-
-melhor_kernel = min(resultados_svm, key=lambda k: resultados_svm[k][0])  # menor MAE
-print(f"\nMelhor kernel: {melhor_kernel} com MAE médio {resultados_svm[melhor_kernel][0]:.2f} e RMSE médio {resultados_svm[melhor_kernel][1]:.2f}")
-
-# ============================================================
-# 4.2
-# ALÍNEA 3D — Rede Neuronial
-# ============================================================
-
-from sklearn.neural_network import MLPRegressor
-
-# Exemplos de configurações para testar
+# Configurações de redes neuronais a testar
 configs = [
     (10,),        # 1 camada oculta, 10 neurônios
     (20,),        # 1 camada oculta, 20 neurônios
@@ -300,7 +295,7 @@ configs = [
 
 resultados_nn = {}
 k = 5
-folds = kfold_indices(X, k)
+folds = kfold_indices(X, k)  # Assume que a função já está definida
 
 for config in configs:
     maes = []
@@ -309,10 +304,14 @@ for config in configs:
         x_train, y_train = X.iloc[train_idx], y.iloc[train_idx]
         x_test, y_test = X.iloc[test_idx], y.iloc[test_idx]
 
-        model = MLPRegressor(hidden_layer_sizes=config, max_iter=500, random_state=42)
-        model.fit(x_train, y_train)
+        pipeline = Pipeline([
+            ('scaler', StandardScaler()),
+            ('mlp', MLPRegressor(hidden_layer_sizes=config, max_iter=500, random_state=42))
+        ])
 
-        y_pred = model.predict(x_test)
+        pipeline.fit(x_train, y_train)
+        y_pred = pipeline.predict(x_test)
+
         mae = mean_absolute_error(y_test, y_pred)
         rmse = np.sqrt(mean_squared_error(y_test, y_pred))
         maes.append(mae)
@@ -321,13 +320,10 @@ for config in configs:
     mae_medio = np.mean(maes)
     rmse_medio = np.mean(rmses)
     resultados_nn[config] = (mae_medio, rmse_medio)
-    print(f"Config {config} | MAE médio: {mae_medio:.2f} | RMSE médio: {rmse_medio:.2f}")
+    print(f"Rede Neuronal {config} | MAE médio: {mae_medio:.2f} | RMSE médio: {rmse_medio:.2f}")
 
 melhor_config = min(resultados_nn, key=lambda k: resultados_nn[k][0])  # menor MAE
-print(f"\nMelhor configuração: {melhor_config} com MAE médio {resultados_nn[melhor_config][0]:.2f} e RMSE médio {resultados_nn[melhor_config][1]:.2f}")
-
-
-
+print(f"\nRede Neuronal Melhor configuração: {melhor_config} com MAE médio {resultados_nn[melhor_config][0]:.2f} e RMSE médio {resultados_nn[melhor_config][1]:.2f}")
 
 # ============================================================
 # 4.2
