@@ -170,8 +170,9 @@ import numpy as np
 
 # Seleção das features e target
 features = ['Affected_Population', 'Populated_Area[km2]', 'Air_Pollution_Average[ug/m3]']
-X = df[df['Region'] == 'Southern Europe'][features]
-y = df[df['Region'] == 'Southern Europe']['Premature_Deaths']
+df_south = df[df['Region'] == 'Southern Europe']
+X = df_south[features]
+y = df_south['Premature_Deaths']
 
 # Regressão Linear Múltipla com k-fold cross-validation
 kf = KFold(n_splits=10, shuffle=True, random_state=42)
@@ -239,13 +240,14 @@ for feature, coef in zip(features, model.coef_):
 import numpy as np
 from sklearn.svm import SVR
 from sklearn.metrics import mean_absolute_error, mean_squared_error
+from sklearn.preprocessing import StandardScaler
 
 def kfold_indices(data, k=5):
     fold_size = len(data) // k
     indices = np.arange(len(data))
     folds = []
     for i in range(k):
-        if i == k-1:
+        if i == k - 1:
             test_idx = indices[i*fold_size:]
         else:
             test_idx = indices[i*fold_size:(i+1)*fold_size]
@@ -253,9 +255,12 @@ def kfold_indices(data, k=5):
         folds.append((train_idx, test_idx))
     return folds
 
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)  # Normaliza fora do loop
+
 kernels = ['linear', 'rbf', 'poly']
 k = 5
-folds = kfold_indices(X, k)
+folds = kfold_indices(X_scaled, k)
 
 resultados_svm = {}
 
@@ -263,10 +268,10 @@ for kernel in kernels:
     maes = []
     rmses = []
     for train_idx, test_idx in folds:
-        x_train, y_train = X.iloc[train_idx], y.iloc[train_idx]
-        x_test, y_test = X.iloc[test_idx], y.iloc[test_idx]
+        x_train, y_train = X_scaled[train_idx], y.iloc[train_idx]
+        x_test, y_test = X_scaled[test_idx], y.iloc[test_idx]
 
-        model = SVR(kernel=kernel)
+        model = SVR(kernel=kernel, max_iter=1000)  # Limite iter para acelerar
         model.fit(x_train, y_train)
 
         y_pred = model.predict(x_test)
@@ -280,12 +285,12 @@ for kernel in kernels:
     resultados_svm[kernel] = (mae_medio, rmse_medio)
     print(f"Kernel: {kernel} | MAE médio: {mae_medio:.2f} | RMSE médio: {rmse_medio:.2f}")
 
-melhor_kernel = min(resultados_svm, key=lambda k: resultados_svm[k][0])  # menor MAE
+melhor_kernel = min(resultados_svm, key=lambda k: resultados_svm[k][0])
 print(f"\nMelhor kernel: {melhor_kernel} com MAE médio {resultados_svm[melhor_kernel][0]:.2f} e RMSE médio {resultados_svm[melhor_kernel][1]:.2f}")
 
 # ============================================================
 # 4.2
-# ALÍNEA 3D — Rede Neuronial
+# ALÍNEA 3D — Rede Neuronal
 # ============================================================
 
 from sklearn.neural_network import MLPRegressor
