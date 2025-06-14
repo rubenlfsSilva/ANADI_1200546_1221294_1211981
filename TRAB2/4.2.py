@@ -325,3 +325,34 @@ for config in configs:
 
 melhor_config = min(resultados_nn, key=lambda k: resultados_nn[k][0])  # menor MAE
 print(f"\nMelhor configuração: {melhor_config} com MAE médio {resultados_nn[melhor_config][0]:.2f} e RMSE médio {resultados_nn[melhor_config][1]:.2f}")
+
+
+
+
+# ============================================================
+# 4.2
+# ALÍNEA 4 — Compare os resultados obtidos pelos modelos referidos na questão 5, usando o erro médio
+# absoluto (MAE) e a raiz quadrada do erro médio (RMSE).
+# ============================================================
+
+
+
+print("Comparação dos modelos:")
+
+#print("\nModelo: Regressão Linear")
+#print(f"MAE médio: {mae_linear:.2f}")
+#print(f"RMSE médio: {rmse_linear:.2f}")
+
+#print("\nModelo: Árvore de Regressão")
+#print(f"MAE médio: {mae_tree:.2f}")
+#print(f"RMSE médio: {rmse_tree:.2f}")
+
+print("\nModelo: SVM")
+print(f"Melhor kernel: {melhor_kernel}")
+print(f"MAE médio: {resultados_svm[melhor_kernel][0]:.2f}")
+print(f"RMSE médio: {resultados_svm[melhor_kernel][1]:.2f}")
+
+print("\nModelo: Rede Neural")
+print(f"Melhor configuração: {melhor_config}")
+print(f"MAE médio: {resultados_nn[melhor_config][0]:.2f}")
+print(f"RMSE médio: {resultados_nn[melhor_config][1]:.2f}")
