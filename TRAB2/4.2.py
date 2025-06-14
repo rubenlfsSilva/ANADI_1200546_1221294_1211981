@@ -271,7 +271,7 @@ for kernel in kernels:
         x_train, y_train = X_scaled[train_idx], y.iloc[train_idx]
         x_test, y_test = X_scaled[test_idx], y.iloc[test_idx]
 
-        model = SVR(kernel=kernel, max_iter=1000)  # Limite iter para acelerar
+        model = SVR(kernel=kernel, max_iter=5000)  # Limite iter para acelerar
         model.fit(x_train, y_train)
 
         y_pred = model.predict(x_test)
